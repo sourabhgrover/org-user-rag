@@ -1,7 +1,7 @@
 from pymongo.asynchronous.database import AsyncDatabase
 from datetime import datetime
 from bson import ObjectId
-from typing import Optional
+from typing import Optional,List,Dict,Any
 
 from app.api.v1.models import OrganizationCreate , OrganizationInDB ,OrganizationUpdate
 
@@ -73,3 +73,20 @@ async def update_organization(
         return None # Organization not found
     
     return await get_organization_by_id(db, org_id)
+
+async def get_organizations(
+    db: AsyncDatabase,
+    skip: int = 0,
+    limit: int = 100,
+    search_name: Optional[str] = None
+) -> List[OrganizationInDB]:
+    """
+    Retrieves a list of organizations with optional filtering and pagination.
+    """
+    query_filter: Dict[str, Any] = {}
+    if search_name:
+        query_filter["name"] = {"$regex": search_name, "$options": "i"}
+
+    cursor = db.organizations.find(query_filter).skip(skip).limit(limit)
+    organizations = await cursor.to_list(length=limit)
+    return [OrganizationInDB(**org) for org in organizations]

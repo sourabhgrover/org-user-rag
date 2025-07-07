@@ -1,6 +1,7 @@
-from fastapi import APIRouter,Depends,HTTPException,status
+from fastapi import APIRouter,Depends,HTTPException,status,Query
 from pymongo.asynchronous.database import AsyncDatabase
 from pymongo.errors import DuplicateKeyError, PyMongoError  # Import DuplicateKeyError and PyMongoError for exception handling
+from typing import List, Optional
 from app.db.mongodb import get_database
 from app.api.v1.models import OrganizationCreate,OrganizationResponse,PyObjectId,OrganizationUpdate  # Import your OrganizationCreate model here
 # from app.crud import create_organization  # Import your create_organization function here
@@ -8,9 +9,7 @@ from app.crud import organization as crud_organization   # Import your create_or
 
 router = APIRouter(prefix="/organization", tags=["Organization"])
 
-@router.get("/")
-async def get_organization_endpoint():
-    return {"message": "Organization endpoint is working!"}
+
 
 @router.get("/{org_id}", response_model=OrganizationResponse, summary="Get organization by Id")
 async def get_organization_by_id_endpoint(org_id: PyObjectId, db: AsyncDatabase = Depends(get_database)):
@@ -76,3 +75,25 @@ async def update_organization_endpoint(org_id: PyObjectId, data: OrganizationUpd
     updated_org = await crud_organization.update_organization(db, org_id, data)
     
     return updated_org
+
+@router.get(
+    "/",
+    response_model=List[OrganizationResponse],
+    summary="List all organizations"
+)
+async def list_organizations_endpoint(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, le=1000),
+    search_name: Optional[str] = Query(None, description="Search by organization name (case-insensitive)"),
+    db: AsyncDatabase = Depends(get_database)
+):
+    """
+    Lists all organizations with optional filtering by name and pagination.
+    """
+    organizations = await crud_organization.get_organizations(
+        db,
+        skip=skip,
+        limit=limit,
+        search_name=search_name
+    )
+    return organizations
