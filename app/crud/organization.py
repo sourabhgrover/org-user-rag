@@ -1,11 +1,20 @@
 from pymongo.asynchronous.database import AsyncDatabase
-from app.api.v1.models import OrganizationCreate , OrganizationInDB
 from datetime import datetime
+from bson import ObjectId
+from typing import Optional
+
+from app.api.v1.models import OrganizationCreate , OrganizationInDB
 
 
 async def get_organization_by_name(db: AsyncDatabase, name: str):
     
     org_doc =  await db.organizations.find_one({"name": name})
+    if org_doc:
+        return OrganizationInDB(**org_doc)
+    return None
+
+async def get_organization_by_id(db: AsyncDatabase, org_id: str) -> Optional[OrganizationInDB]:
+    org_doc = await db.organizations.find_one({"_id": ObjectId(org_id)})
     if org_doc:
         return OrganizationInDB(**org_doc)
     return None
