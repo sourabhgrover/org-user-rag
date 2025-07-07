@@ -5,6 +5,10 @@ from typing import Optional
 
 from app.api.v1.models import OrganizationCreate , OrganizationInDB
 
+async def delete_organization_by_id(db: AsyncDatabase, org_id: str) -> bool:
+      # Perform the deletion
+        result = await db.organizations.delete_one({"_id": ObjectId(org_id)})
+        return result.deleted_count > 0
 
 async def get_organization_by_name(db: AsyncDatabase, name: str):
     

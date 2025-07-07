@@ -59,3 +59,13 @@ async def create_organization_endpoint(data: OrganizationCreate,db :  AsyncDatab
     #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
     #         detail="An unexpected error occurred."
     #     )
+
+@router.delete("/{org_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete an organization by Id")
+async def delete_organization_endpoint(org_id: PyObjectId, db: AsyncDatabase = Depends(get_database)):
+     deleted = await crud_organization.delete_organization_by_id(db, org_id)
+     if not deleted:
+         raise HTTPException(
+             status_code=status.HTTP_404_NOT_FOUND,
+             detail="Organization not found"
+         )
+     return {"detail": "Organization deleted successfully"}
