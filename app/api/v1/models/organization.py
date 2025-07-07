@@ -14,6 +14,9 @@ class OrganizationCreate(OrganizationBase):
     """Model for creating a new organization."""
     pass
 
+class OrganizationUpdate(OrganizationBase):
+    name : Annotated[str, Field(description="The name of the organization", min_length=1,max_length=100)] = None
+
 class OrganizationInDB(OrganizationBase):
     """Model for organizations as stored in the database, including MongoDB _id and timestamps."""
      # Properties:

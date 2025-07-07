@@ -2,7 +2,7 @@ from fastapi import APIRouter,Depends,HTTPException,status
 from pymongo.asynchronous.database import AsyncDatabase
 from pymongo.errors import DuplicateKeyError, PyMongoError  # Import DuplicateKeyError and PyMongoError for exception handling
 from app.db.mongodb import get_database
-from app.api.v1.models import OrganizationCreate,OrganizationResponse,PyObjectId  # Import your OrganizationCreate model here
+from app.api.v1.models import OrganizationCreate,OrganizationResponse,PyObjectId,OrganizationUpdate  # Import your OrganizationCreate model here
 # from app.crud import create_organization  # Import your create_organization function here
 from app.crud import organization as crud_organization   # Import your create_organization function here
 
@@ -69,3 +69,10 @@ async def delete_organization_endpoint(org_id: PyObjectId, db: AsyncDatabase = D
              detail="Organization not found"
          )
      return {"detail": "Organization deleted successfully"}
+
+@router.put("/{org_id}", response_model=OrganizationResponse, summary="Update an organization by Id")
+async def update_organization_endpoint(org_id: PyObjectId, data: OrganizationUpdate, db: AsyncDatabase = Depends(get_database)):
+    # Update the organization data
+    updated_org = await crud_organization.update_organization(db, org_id, data)
+    
+    return updated_org
