@@ -14,6 +14,9 @@ async def create_user_endpoint(user_create: UserCreate, db: AsyncDatabase = Depe
     try:  
         new_user = await crud_user.create_user(db, user_create)
         return new_user
+    except HTTPException:
+        # Re-raise HTTPExceptions from CRUD layer (like duplicate email errors)
+        raise
     except Exception as e:
         # This is a catch-all for any other unexpected errors
         print(f"Unexpected Error during user creation: {e}")

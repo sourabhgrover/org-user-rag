@@ -46,6 +46,9 @@ async def create_user(db: AsyncDatabase, user_create: UserCreate):
     
         user_create_data = user_create.model_dump(by_alias=True)
 
+        # Convert organization_id to ObjectId if it's a valid ObjectId string
+        user_create_data['organization_id'] = ObjectId(user_create.organization_id)
+
         # Convert date to datetime for MongoDB compatibility
         # if 'dob' in user_create_data:
         #     user_create_data['dob'] = datetime.combine(user_create_data['dob'], datetime.min.time())
