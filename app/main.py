@@ -47,6 +47,7 @@ async def generic_exception_handler(request: Request, exc: Exception):
     Handles any unhandled exception (catch-all).
     Returns a 500 Internal Server Error.
     """
+    print(f"Unhandled Exception: {exc}")
     logger.error(f"Unhandled Exception: {exc}", exc_info=True, extra={"request": request})
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
