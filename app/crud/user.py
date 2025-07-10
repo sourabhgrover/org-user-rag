@@ -1,6 +1,6 @@
 from fastapi import HTTPException, status
 from pymongo.asynchronous.database import AsyncDatabase
-from app.api.v1.models.user import UserCreate, UserInDB
+from app.api.v1.models.user import UserCreate, UserInDB, PyObjectId
 from datetime import datetime
 from bson import ObjectId
 
@@ -82,3 +82,7 @@ async def create_user(db: AsyncDatabase, user_create: UserCreate):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An unexpected error occurred while creating user: {str(e)}"
         )
+    
+async def delete_user_by_id(user_id:PyObjectId,db:AsyncDatabase) -> bool:
+        result = await db.users.delete_one({"_id":ObjectId(user_id)});
+        return result.deleted_count > 0

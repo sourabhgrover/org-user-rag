@@ -1,9 +1,7 @@
 from fastapi import APIRouter , Depends, HTTPException,status
 from pymongo.asynchronous.database import AsyncDatabase
 from app.db.mongodb import get_database  # Import the get_database function
-# from app.api.v1.models import UserCreate   # Import your UserCreate model here
-
-from app.api.v1.models.user import UserCreate
+from app.api.v1.models.user import UserCreate, PyObjectId
 from app.crud import user as crud_user
 
 router = APIRouter(prefix="/user", tags=["User"])
@@ -39,5 +37,9 @@ async def update_user_by_id(user_id:str,data:dict,db:AsyncDatabase = Depends(get
     return {}
 
 @router.delete("/${user_id}",summary="Delete user by ID")
-async def delete_user_by_id(user_id:str,db:AsyncDatabase= Depends(get_database)):
-    return {}
+async def delete_user_by_id(user_id:PyObjectId,db:AsyncDatabase= Depends(get_database)):
+    result = await crud_user.delete_user_by_id(user_id,db)
+    if not result:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="User not found")
+
+    return {"detail":"User deleted successfully"}
