@@ -48,6 +48,7 @@ async def create_user(db: AsyncDatabase, user_create: UserCreate):
 
         # Convert organization_id to ObjectId if it's a valid ObjectId string
         user_create_data['organization_id'] = ObjectId(user_create.organization_id)
+        user_create_data['dob'] = datetime.combine(user_create_data['dob'], datetime.min.time())
 
         # Convert date to datetime for MongoDB compatibility
         # if 'dob' in user_create_data:
@@ -68,7 +69,6 @@ async def create_user(db: AsyncDatabase, user_create: UserCreate):
         # Add timestamps
         user_create_data['created_at'] = datetime.utcnow()
         user_create_data['updated_at'] = datetime.utcnow()
-        
         result = await db.users.insert_one(user_create_data)
         new_user = await db.users.find_one({"_id": result.inserted_id})
 
