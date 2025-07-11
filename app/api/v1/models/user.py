@@ -20,7 +20,7 @@ class UserBase(BaseModel):
     gender: Annotated[GenderEnum, Field(description="Gender of the user")]
     dob: Annotated[date, Field(description="Date of birth of the user", example="1990-01-15")]
     is_admin: Annotated[bool, Field(default=False, description="Indicates if the user is an admin", example=True)]
-    organization_id: Annotated[PyObjectId, Field(alias="organization_id", description="The ID of the organization the user belongs to")]
+    organization_id: Annotated[PyObjectId, Field(alias="organization_id", description="The ID of the organization the user belongs to",example="686a61391e3e8aaa36c09162")]
 
 class UserCreate(UserBase):
     password: Annotated[str,Field(min_length=8, max_length=128, description="Password for the user account",)] 
