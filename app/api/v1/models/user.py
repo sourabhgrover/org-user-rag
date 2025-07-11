@@ -68,3 +68,13 @@ class UserResponse(UserInDB):
 
     #  class ConfigDict(UserInDB.ConfigDict):
     #     exclude= {"hashed_password"}
+
+
+class UserUpdate(BaseModel):
+    first_name: Optional[Annotated[str, Field(min_length=3, max_length=50,description="The first name of the user", example="Sourabh")]] = None
+    last_name: Optional[Annotated[str, Field(min_length=3, max_length=50,description="The last name of the user", example="Grover")]] = None
+    email: Optional[Annotated[EmailStr, Field(description="The email address of the user", example="abc@xyx.com")]] = None
+    username: Optional[Annotated[str, Field(min_length=3, max_length=50, description="The username of the user", example="sourabhgrover")]] = None
+    gender: Optional[Annotated[GenderEnum, Field(description="Gender of the user")]] = None
+    dob: Optional[Annotated[date, Field(description="Date of birth of the user", example="1990-01-15")]] = None
+    is_admin: Optional[Annotated[bool, Field(default=False, description="Indicates if the user is an admin", example=True)]] = None

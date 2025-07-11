@@ -4,7 +4,7 @@ from datetime import datetime, date
 from bson import ObjectId
 from passlib.context import CryptContext
 
-from app.api.v1.models.user import UserCreate, UserInDB, PyObjectId,UserResponse
+from app.api.v1.models.user import UserCreate, UserInDB, PyObjectId,UserResponse,UserUpdate
 
 # Password hashing context
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated="auto")
@@ -123,3 +123,43 @@ async def create_user(db: AsyncDatabase, user_create: UserCreate):
 async def delete_user_by_id(user_id:PyObjectId,db:AsyncDatabase) -> bool:
     result = await db.users.delete_one({"_id":ObjectId(user_id)});
     return result.deleted_count > 0
+
+
+async def update_user_by_id(user_id:PyObjectId,update_data:UserUpdate,db:AsyncDatabase):
+        
+        user = await get_user_by_id(user_id,db)
+        if not user:
+            return None
+        
+
+        # 2. Convert Pydantic model to a dictionary, removing None values
+        #    exclude_none=True ensures only fields provided by the client are included in update_data
+        #    by_alias=True handles organization_id if its alias is used
+        update_data_dict = update_data.model_dump(exclude_none=True,by_alias=True)
+        update_data_dict["updated_at"] = datetime.utcnow()
+
+         # If no fields were provided for update (after stripping None values)
+        if not update_data_dict:
+            return None # Indicate no actual changes to apply
+        
+        # Perfrom update operation
+        result = await db.users.update_one(
+            {'_id':ObjectId(user_id)},
+            {'$set':update_data_dict}
+        )
+        
+        # Check if data is modified
+        if result.modified_count == 1:
+            return get_user_by_id(user_id,db)
+        
+        return None
+
+
+async def get_user_by_id(user_id:PyObjectId,db:AsyncDatabase):
+    if not ObjectId.is_valid(user_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="Invalid User Id")
+    
+    user = await db.users.find_one({'_id':ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="User Details not found")
+    return UserInDB(**user)
