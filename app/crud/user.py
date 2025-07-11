@@ -136,6 +136,10 @@ async def update_user_by_id(user_id:PyObjectId,update_data:UserUpdate,db:AsyncDa
         #    exclude_none=True ensures only fields provided by the client are included in update_data
         #    by_alias=True handles organization_id if its alias is used
         update_data_dict = update_data.model_dump(exclude_none=True,by_alias=True)
+        
+        if 'dob' in update_data_dict and isinstance(update_data_dict['dob'], date):
+            update_data_dict['dob'] = datetime.combine(update_data_dict['dob'], datetime.min.time())
+
         update_data_dict["updated_at"] = datetime.utcnow()
 
          # If no fields were provided for update (after stripping None values)
@@ -150,7 +154,7 @@ async def update_user_by_id(user_id:PyObjectId,update_data:UserUpdate,db:AsyncDa
         
         # Check if data is modified
         if result.modified_count == 1:
-            return get_user_by_id(user_id,db)
+            return await get_user_by_id(user_id,db)
         
         return None
 
