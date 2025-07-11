@@ -4,7 +4,7 @@ from datetime import datetime, date
 from bson import ObjectId
 from passlib.context import CryptContext
 
-from app.api.v1.models.user import UserCreate, UserInDB, PyObjectId
+from app.api.v1.models.user import UserCreate, UserInDB, PyObjectId,UserResponse
 
 # Password hashing context
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated="auto")
@@ -108,6 +108,7 @@ async def create_user(db: AsyncDatabase, user_create: UserCreate):
         print(f"create_user: Retrieved user from DB: {new_user}")
         
         # This is where the Pydantic validation error occurs if new_user is missing fields
+        
         return UserInDB(**new_user)
     except HTTPException:
         # Re-raise HTTP exceptions

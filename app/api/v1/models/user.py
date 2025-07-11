@@ -1,4 +1,4 @@
-from pydantic import BaseModel,Field,BeforeValidator,EmailStr,field_validator
+from pydantic import BaseModel,Field,BeforeValidator,EmailStr,field_validator,ConfigDict 
 from typing import Annotated,Optional
 from enum import Enum
 from datetime import date,datetime
@@ -29,22 +29,42 @@ class UserCreate(UserBase):
 class UserInDB(UserBase):
     """Model for users as stored in the database, including MongoDB _id and timestamps."""
     id: PyObjectId = Field(alias="_id", default_factory=lambda: str(ObjectId()))
-    hashed_password: Annotated[str, Field(description="Hashed password for the user account")]
+    hashed_password: Annotated[str, Field(description="Hashed password for the user account",exclude=True)]
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    @field_validator('dob', mode='before')
-    @classmethod
-    def convert_datetime_to_date(cls, v):
-        """Convert datetime back to date if it comes from MongoDB as datetime"""
-        if isinstance(v, datetime):
-            return v.date()
-        return v
+    # model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
+    # model_config = ConfigDict(populate_by_name=True)
 
-    @field_validator('gender', mode='before')
-    @classmethod
-    def convert_gender_to_enum(cls, v):
-        """Convert string back to enum if it comes from MongoDB as string"""
-        if isinstance(v, str):
-            return GenderEnum(v)
-        return v
+    # @field_validator('dob', mode='before')
+    # @classmethod
+    # def convert_datetime_to_date(cls, v):
+    #     """Convert datetime back to date if it comes from MongoDB as datetime"""
+    #     if isinstance(v, datetime):
+    #         return v.date()
+    #     return v
+
+    # @field_validator('gender', mode='before')
+    # @classmethod
+    # def convert_gender_to_enum(cls, v):
+    #     """Convert string back to enum if it comes from MongoDB as string"""
+    #     if isinstance(v, str):
+    #         return GenderEnum(v)
+    #     return v
+
+    # class ConfigDict:
+    #     populate_by_name = True
+    #     arbitrary_types_allowed = True
+    #     json_encoders = {
+    #         ObjectId: str,
+    #         datetime: lambda dt: dt.isoformat(),
+    #         date: lambda d: d.isoformat()
+    #     }
+    
+class UserResponse(UserInDB):
+    pass
+        # model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
+    #   model_config = ConfigDict(exclude={"hashed_password"})
+
+    #  class ConfigDict(UserInDB.ConfigDict):
+    #     exclude= {"hashed_password"}
