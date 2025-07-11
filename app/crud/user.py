@@ -1,8 +1,19 @@
 from fastapi import HTTPException, status
 from pymongo.asynchronous.database import AsyncDatabase
-from app.api.v1.models.user import UserCreate, UserInDB, PyObjectId
-from datetime import datetime
+from datetime import datetime, date
 from bson import ObjectId
+from passlib.context import CryptContext
+
+from app.api.v1.models.user import UserCreate, UserInDB, PyObjectId
+
+# Password hashing context
+pwd_context = CryptContext(schemes=['bcrypt'], deprecated="auto")
+
+def verify_pwd(plain_pwd: str, hashed_pwd: str) -> bool:
+    return pwd_context.verify(plain_pwd, hashed_pwd)
+
+def get_pwd_hash(pwd: str) -> str:
+    return pwd_context.hash(pwd)
 
 async def validate_organization_id(db: AsyncDatabase, organization_id: str) -> bool:
     if not ObjectId.is_valid(organization_id):
@@ -46,32 +57,49 @@ async def create_user(db: AsyncDatabase, user_create: UserCreate):
     
         user_create_data = user_create.model_dump(by_alias=True)
 
+        
+        user_create_data['hashed_password'] = get_pwd_hash(user_create_data.pop('password'))
+        
+        
+        # Validate required fields are present
+        # if 'dob' not in user_create_data or user_create_data['dob'] is None:
+        #     raise HTTPException(
+        #         status_code=status.HTTP_400_BAD_REQUEST,
+        #         detail="Date of birth is required"
+        #     )
+        
+        # if 'hashed_password' not in user_create_data or user_create_data['hashed_password'] is None:
+        #     raise HTTPException(
+        #         status_code=status.HTTP_400_BAD_REQUEST,
+        #         detail="Password hashing failed"
+        #     )
+        
         # Convert organization_id to ObjectId if it's a valid ObjectId string
         user_create_data['organization_id'] = ObjectId(user_create.organization_id)
+        
+        # Convert date to datetime for MongoDB storage
+        # if isinstance(user_create_data['dob'], date):
         user_create_data['dob'] = datetime.combine(user_create_data['dob'], datetime.min.time())
 
-        # Convert date to datetime for MongoDB compatibility
-        # if 'dob' in user_create_data:
-        #     user_create_data['dob'] = datetime.combine(user_create_data['dob'], datetime.min.time())
-        
-        # # Convert enum to string value
+        # Convert enum to string value for MongoDB storage
         # if 'gender' in user_create_data:
-        #     user_create_data['gender'] = user_create_data['gender'].value if hasattr(user_create_data['gender'], 'value') else str(user_create_data['gender'])
-        
-        # Convert organization_id to ObjectId if it's a valid ObjectId string
-        # if 'organization_id' in user_create_data and user_create_data['organization_id'] != 'string':
-        #     try:
-        #         user_create_data['organization_id'] = ObjectId(user_create_data['organization_id'])
-        #     except:
-        #         # If invalid ObjectId, keep as string or handle error
-        #         pass
+        #     gender_value = user_create_data['gender']
+        #     if hasattr(gender_value, 'value'):
+        #         user_create_data['gender'] = gender_value.value
+        #     else:
+        #         user_create_data['gender'] = str(gender_value)
         
         # Add timestamps
         user_create_data['created_at'] = datetime.utcnow()
         user_create_data['updated_at'] = datetime.utcnow()
+        
+        print(f"User create data after conversion: {user_create_data}")
+        
         result = await db.users.insert_one(user_create_data)
         new_user = await db.users.find_one({"_id": result.inserted_id})
-
+        
+        print(f"Retrieved user from DB: {new_user}")
+        
         return UserInDB(**new_user)
     except HTTPException:
         # Re-raise HTTP exceptions

@@ -23,28 +23,28 @@ class UserBase(BaseModel):
     organization_id: Annotated[PyObjectId, Field(alias="organization_id", description="The ID of the organization the user belongs to")]
 
 class UserCreate(UserBase):
-    # password: Annotated[str,Field(min_length=8, max_length=128, description="Password for the user account",)] 
+    password: Annotated[str,Field(min_length=8, max_length=128, description="Password for the user account",)] 
     pass
 
 class UserInDB(UserBase):
     """Model for users as stored in the database, including MongoDB _id and timestamps."""
     id: PyObjectId = Field(alias="_id", default_factory=lambda: str(ObjectId()))
-    # hashed_password: Annotated[str, Field(description="Hashed password for the user account")]
+    hashed_password: Annotated[str, Field(description="Hashed password for the user account")]
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    # @field_validator('dob', mode='before')
-    # @classmethod
-    # def convert_datetime_to_date(cls, v):
-    #     """Convert datetime back to date if it comes from MongoDB as datetime"""
-    #     if isinstance(v, datetime):
-    #         return v.date()
-    #     return v
+    @field_validator('dob', mode='before')
+    @classmethod
+    def convert_datetime_to_date(cls, v):
+        """Convert datetime back to date if it comes from MongoDB as datetime"""
+        if isinstance(v, datetime):
+            return v.date()
+        return v
 
-    # @field_validator('gender', mode='before')
-    # @classmethod
-    # def convert_gender_to_enum(cls, v):
-    #     """Convert string back to enum if it comes from MongoDB as string"""
-    #     if isinstance(v, str):
-    #         return GenderEnum(v)
-    #     return v
+    @field_validator('gender', mode='before')
+    @classmethod
+    def convert_gender_to_enum(cls, v):
+        """Convert string back to enum if it comes from MongoDB as string"""
+        if isinstance(v, str):
+            return GenderEnum(v)
+        return v
