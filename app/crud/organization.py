@@ -1,9 +1,10 @@
 from pymongo.asynchronous.database import AsyncDatabase
-from datetime import datetime
+from datetime import datetime, date
 from bson import ObjectId
 from typing import Optional,List,Dict,Any
 
 from app.api.v1.models import OrganizationCreate , OrganizationInDB ,OrganizationUpdate
+from app.api.v1.models.user import UserCreate, GenderEnum
 
 async def delete_organization_by_id(db: AsyncDatabase, org_id: str) -> bool:
       # Perform the deletion
@@ -36,7 +37,12 @@ async def create_organization(db: AsyncDatabase, create_organization: Organizati
     
     result = await db.organizations.insert_one(create_organization_data)
     new_organization = await db.organizations.find_one({"_id": result.inserted_id})
-    return OrganizationInDB(**new_organization)
+    organization = OrganizationInDB(**new_organization)
+    
+    # Create default admin user for the organization
+    await create_default_admin_user(db, str(organization.id))
+    
+    return organization
 
 
 async def update_organization(
@@ -90,3 +96,32 @@ async def get_organizations(
     cursor = db.organizations.find(query_filter).skip(skip).limit(limit)
     organizations = await cursor.to_list(length=limit)
     return [OrganizationInDB(**org) for org in organizations]
+
+async def create_default_admin_user(db: AsyncDatabase, organization_id: str):
+    """
+    Creates a default admin user for a newly created organization.
+    Username: admin, Password: admin
+    """
+    from app.crud.user import create_user
+    
+    # Create default admin user data
+    admin_user_data = UserCreate(
+        username="admin",
+        email=f"admin@org-{organization_id[:8]}.com",  # Use first 8 chars of org ID for unique email
+        first_name="Admin",
+        last_name="User",
+        password="admin@admin",
+        dob=date(1990, 1, 1),  # Default date of birth
+        gender=GenderEnum.OTHER,  # Default gender
+        organization_id=organization_id
+    )
+    
+    try:
+        # Create the admin user
+        admin_user = await create_user(db, admin_user_data)
+        print(f"Default admin user created for organization {organization_id}: {admin_user.username}")
+        return admin_user
+    except Exception as e:
+        print(f"Failed to create default admin user for organization {organization_id}: {e}")
+        # Don't raise exception to avoid breaking organization creation
+        return None
