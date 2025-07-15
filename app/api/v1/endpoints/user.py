@@ -1,5 +1,6 @@
-from fastapi import APIRouter , Depends, HTTPException,status
+from fastapi import APIRouter , Depends, HTTPException,status,Query
 from pymongo.asynchronous.database import AsyncDatabase
+from typing import Optional
 from app.db.mongodb import get_database  # Import the get_database function
 from app.api.v1.models.user import UserCreate, PyObjectId,UserResponse,UserUpdate
 from app.crud import user as crud_user
@@ -25,12 +26,20 @@ async def create_user_endpoint(user_create: UserCreate, db: AsyncDatabase = Depe
 
 
 @router.get("/", summary="Get all users")
-async def get_all_users(db: AsyncDatabase = Depends(get_database)):
-        return {}
+async def get_all_users(skip:int = Query(0,ge=0),limit:int = Query(100,le=1000),search_name:Optional[str] = Query(None,description='Search user by name case insesnitive'),db: AsyncDatabase = Depends(get_database)):
+        users = await crud_user.get_all_user(skip,limit,search_name,db)
+        return users
 
 @router.get("/{user_id}",summary="Get user by ID")
-async def get_user_by_id(user_id:str,db:AsyncDatabase = Depends(get_database)):
-    return {}
+async def get_user_by_id(user_id:PyObjectId,db:AsyncDatabase = Depends(get_database)):
+    try:
+        user = await crud_user.get_user_by_id(user_id, db)
+        return user
+    except HTTPException:
+        # Re-raise HTTPExceptions from CRUD layer (like user not found)
+        raise
+    except HTTPException as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="A unexpected error occur {e}")
 
 @router.put("/{user_id}",summary="Update user by ID")
 async def update_user_by_id(user_id:str,update_data:UserUpdate,db:AsyncDatabase = Depends(get_database)):

@@ -167,3 +167,13 @@ async def get_user_by_id(user_id:PyObjectId,db:AsyncDatabase):
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="User Details not found")
     return UserInDB(**user)
+
+async def get_all_user(skip,limit,search_name,db):
+    query_filter = {}
+    if search_name:
+        query_filter['first_name'] = {"$regex":search_name,"$options":"i"}
+
+    cursor = db.users.find(query_filter).skip(skip).limit(limit)
+    print(f"cursor: {cursor}")  # Debugging: Print the cursor object
+    users = await cursor.to_list(length=limit)
+    return [UserInDB(**user) for user in users]
