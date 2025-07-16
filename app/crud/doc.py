@@ -13,7 +13,7 @@ async def upload_files(
     files: List[UploadFile],
     organizationId: str,
     db: AsyncDatabase 
-) -> List[dict]:
+) -> List[DocOutput]:
     try:
         UPLOAD_DIR = "uploaded_files"
         os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -35,7 +35,7 @@ async def upload_files(
                 f.write(content)
 
             doc = {
-                "organizationId": ObjectId(organizationId),
+                "organizationId": organizationId,  # Store as string, not ObjectId
                 "name": file.filename,
                 "unique_filename": unique_filename,
                 "path": file_path,
@@ -45,24 +45,45 @@ async def upload_files(
             documents_to_insert.append(doc)
 
         # Insert into DB
+        uploaded_docs = []
         if documents_to_insert:
             insert_result = await db.documents.insert_many(documents_to_insert)
+            if not insert_result.acknowledged:
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Failed to insert documents into database")
+            
+            # Convert inserted documents to DocOutput format
+            for i, doc in enumerate(documents_to_insert):
+                doc_output = DocOutput(
+                    id=str(insert_result.inserted_ids[i]),
+                    organization_id=doc["organizationId"],
+                    name=doc["name"],
+                    unique_filename=doc["unique_filename"],
+                    path=doc["path"],
+                    uploadedAt=doc["uploadedAt"]
+                )
+                uploaded_docs.append(doc_output)
 
-
-        return documents_to_insert
+        return uploaded_docs
 
     except Exception as e:
         # raise BadRequestException(f"Error in uploading files: {str(e)}")
         raise Exception(f"Error in uploading files: {str(e)}")
 
-async def getDocsByOrgId(orgId: str, db) -> DocOutput:
+async def getDocsByOrgId(orgId: str, db) -> List[DocOutput]:
     try:
         docs_cursor = db.documents.find({"organizationId": orgId})
         docs = []
         async for doc in docs_cursor:
-            doc["id"] = str(doc["_id"])
-            del doc["_id"]
-            docs.append(DocOutput.model_validate(doc))
+            # Convert ObjectId to string and map fields properly
+            doc_data = {
+                "id": str(doc["_id"]),
+                "organization_id": doc["organizationId"],  # Map to organization_id
+                "name": doc["name"],
+                "unique_filename": doc["unique_filename"],
+                "path": doc["path"],
+                "uploadedAt": doc["uploadedAt"]
+            }
+            docs.append(DocOutput(**doc_data))
         return docs
 
     except Exception as e:
