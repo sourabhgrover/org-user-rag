@@ -1,7 +1,7 @@
 # app/dependencies.py
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from pymongo.database import AsyncDatabase
+from pymongo.asynchronous.database import AsyncDatabase
 from jose import JWTError, ExpiredSignatureError # Import ExpiredSignatureError for specific handling
 
 from app.db.mongodb import get_database
@@ -27,6 +27,8 @@ async def get_current_user_from_token(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+    print(f"Token",token)
     
     try:
         payload = security.decode_access_token(token)
@@ -88,6 +90,7 @@ async def get_current_admin_user(
     It first checks `is_admin` from the token (fast), then re-verifies from DB for stronger security
     against stale admin statuses.
     """
+    print(f"Token",token_data)
     if not token_data.is_admin: # Initial quick check from token
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

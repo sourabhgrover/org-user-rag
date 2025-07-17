@@ -4,11 +4,12 @@ from typing import Optional
 from app.db.mongodb import get_database  # Import the get_database function
 from app.api.v1.models.user import UserCreate, PyObjectId,UserResponse,UserUpdate
 from app.crud import user as crud_user
+from app.core.dependencies import get_current_admin_user
 
 router = APIRouter(prefix="/user", tags=["User"])
 
 
-@router.post("/",response_model=UserResponse, summary="Create a new user")
+@router.post("/",response_model=UserResponse, summary="Create a new user",dependencies=[Depends(get_current_admin_user)])
 async def create_user_endpoint(user_create: UserCreate, db: AsyncDatabase = Depends(get_database)):
     try:  
         new_user = await crud_user.create_user(db, user_create)
