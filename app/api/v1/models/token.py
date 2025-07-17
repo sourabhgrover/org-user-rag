@@ -1,6 +1,4 @@
-# app/api/v1/models/token.py
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 
 class Token(BaseModel):
@@ -9,5 +7,6 @@ class Token(BaseModel):
     token_type: str = "bearer"
 
 class TokenData(BaseModel):
-    """Model for the data contained within the JWT token."""
-    username: Optional[str] = None # Or user_id: Optional[str] = None
+    username: str
+    user_id: str = Field(alias="user_id") # Use alias to match 'user_id' in JWT payload
+    is_admin: bool
