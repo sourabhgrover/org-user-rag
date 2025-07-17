@@ -10,6 +10,12 @@ class Settings(BaseSettings):
     # Database settings for MongoDB - NOW REQUIRED!
     MONGO_URI: str  # No default value, so it's required
     MONGO_DB_NAME: str
+
+     # Add JWT Secret Key
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "your-super-secret-key-that-should-be-randomly-generated-in-prod-5b3f7e9a2c1d")
+    # For production, replace the default with a robust generation or environment variable
+    # Example for generating: import secrets; secrets.token_hex(32)
+
     
     model_config = SettingsConfigDict(env_file=".env", extra='ignore')
 

@@ -5,6 +5,7 @@ from bson import ObjectId
 from passlib.context import CryptContext
 
 from app.api.v1.models.user import UserCreate, UserInDB, PyObjectId,UserResponse,UserUpdate
+from app.core import security # Import our security utilities
 
 # Password hashing context
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated="auto")
@@ -14,11 +15,11 @@ def verify_pwd(plain_pwd: str, hashed_pwd: str) -> bool:
     # However, passlib's verify method typically handles this if hash() also produces string
     return pwd_context.verify(plain_pwd, hashed_pwd)
 
-def get_pwd_hash(pwd: str) -> str:
-    # Passlib's hash() method for bcrypt expects bytes for input
-    # and returns a string (the hashed password)
-    # The .decode('utf-8') was incorrect because the output is already a string.
-    return pwd_context.hash(pwd.encode('utf-8')) # <-- REMOVED .decode('utf-8') HERE
+# def get_pwd_hash(pwd: str) -> str:
+#     # Passlib's hash() method for bcrypt expects bytes for input
+#     # and returns a string (the hashed password)
+#     # The .decode('utf-8') was incorrect because the output is already a string.
+#     return pwd_context.hash(pwd.encode('utf-8')) # <-- REMOVED .decode('utf-8') HERE
 
 # ... (rest of your crud.py file) ...
 
@@ -77,7 +78,7 @@ async def create_user(db: AsyncDatabase, user_create: UserCreate):
 
         # Hash password and remove plain password
         # Ensure get_pwd_hash correctly handles encoding/decoding
-        user_create_data['hashed_password'] = get_pwd_hash(user_create_data.pop('password'))
+        user_create_data['hashed_password'] = security.get_password_hash(user_create_data.pop('password'))
         
         # Convert organization_id to ObjectId for MongoDB
         user_create_data['organization_id'] = ObjectId(user_create.organization_id)

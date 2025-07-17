@@ -5,7 +5,7 @@ import logging # For logging errors
 
 from app.core.config import settings
 from app.db.mongodb import connect_to_mongo,close_mongo_connection
-from app.api.v1.endpoints import user_router , organization_router , doc_router
+from app.api.v1.endpoints import user_router , organization_router , doc_router , auth_router
 
 # Configure logging
 logging.basicConfig(level=logging.ERROR) # Set desired logging level
@@ -64,3 +64,4 @@ async def root():
 app.include_router(user_router, prefix="/api/v1", tags=["User"])
 app.include_router(organization_router, prefix="/api/v1", tags=["Organization"])
 app.include_router(doc_router, prefix="/api/v1", tags=["Doc"])
+app.include_router(auth_router, prefix="/api/v1", tags=["Authentication"])
