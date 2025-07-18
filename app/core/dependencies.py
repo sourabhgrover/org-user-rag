@@ -1,21 +1,24 @@
 # app/dependencies.py
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+# from fastapi.security import OAuth2PasswordBearer # REMOVE THIS LINE
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials # ADD THESE IMPORTS
 from pymongo.asynchronous.database import AsyncDatabase
-from jose import JWTError, ExpiredSignatureError # Import ExpiredSignatureError for specific handling
+from jose import JWTError, ExpiredSignatureError
 
 from app.db.mongodb import get_database
-from app.api.v1.models.user import UserInDB # Used when fetching full user object
-from app.api.v1.models.token import TokenData # Our updated TokenData model
+from app.api.v1.models.user import UserInDB
+from app.api.v1.models.token import TokenData
 from app.core import security
 from app.crud import user as crud_user
 
-# OAuth2PasswordBearer still used to extract the token from the Authorization header
-# tokenUrl still points to your login endpoint (even if it accepts JSON now)
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/token")
+# Replace OAuth2PasswordBearer with HTTPBearer
+# This simply tells FastAPI/Swagger UI to expect a Bearer token in the Authorization header.
+# It does NOT involve a 'tokenUrl' as this scheme doesn't define how to GET the token.
+bearer_scheme = HTTPBearer() # Renamed from oauth2_scheme for clarity
 
 async def get_current_user_from_token(
-    token: str = Depends(oauth2_scheme)
+    # The dependency now receives HTTPAuthorizationCredentials
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)
 ) -> TokenData:
     """
     Dependency to get essential user data directly from the JWT payload.
@@ -27,24 +30,21 @@ async def get_current_user_from_token(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-
-    print(f"Token",token)
     
     try:
+        # Access the token string from credentials.credentials
+        token = credentials.credentials 
         payload = security.decode_access_token(token)
         if payload is None:
             raise credentials_exception
         
-        # Extract data from payload. Pydantic's TokenData handles the field mapping.
-        # Use .get() with a default for safety if a claim might be missing.
         username: str = payload.get("sub")
         user_id: str = payload.get("user_id")
-        is_admin: bool = payload.get("is_admin", False) # Default to False if not explicitly in token
+        is_admin: bool = payload.get("is_admin", False)
         
-        if not username or not user_id: # Both are crucial for identifying user
+        if not username or not user_id:
             raise credentials_exception
         
-        # Return a TokenData object populated directly from the JWT payload
         return TokenData(username=username, user_id=user_id, is_admin=is_admin)
     
     except ExpiredSignatureError:
@@ -53,58 +53,39 @@ async def get_current_user_from_token(
             detail="Token has expired. Please log in again.",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    except JWTError: # Catch other JWT errors like invalid signature
+    except JWTError:
         raise credentials_exception
 
-# --- Authorization Dependencies (now leveraging TokenData) ---
+# --- Authorization Dependencies (no change in logic, just input dependency) ---
 
 async def get_current_active_user(
-    # This dependency now gets the TokenData (without a DB hit)
+    # This dependency now consumes the TokenData from the updated get_current_user_from_token
     token_data: TokenData = Depends(get_current_user_from_token),
-    # It then conditionally hits the DB if the full UserInDB object is needed
-    db: AsyncDatabase = Depends(get_database) # Add db dependency here
+    db: AsyncDatabase = Depends(get_database)
 ) -> UserInDB:
     """
     Fetches the full UserInDB object from the database using the user_id from the token.
     Use this when an endpoint needs the complete and freshest user profile data.
+    This dependency WILL hit the database.
     """
     user = await crud_user.get_user(db, token_data.user_id)
     
     if user is None:
-        # This case implies the user_id in the token exists but the user was deleted from DB
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found in database (token valid but user removed).")
     
-    # If you had an 'is_active' field in your UserInDB model, you would check it here:
-    # if not user.is_active:
-    #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user account.")
-        
     return user
 
 async def get_current_admin_user(
-    # First, quickly get basic data from token
-    token_data: TokenData = Depends(get_current_user_from_token),
-    db: AsyncDatabase = Depends(get_database) # Add db dependency here
+    token_data: TokenData = Depends(get_current_user_from_token)
 ) -> TokenData:
     """
     Dependency to ensure the current authenticated user has admin privileges.
-    It first checks `is_admin` from the token (fast), then re-verifies from DB for stronger security
-    against stale admin statuses.
+    This version relies *solely* on the 'is_admin' flag stored in the JWT payload
+    and does NOT perform an additional database lookup for freshness.
     """
-    print(f"Token",token_data)
-    if not token_data.is_admin: # Initial quick check from token
+    if not token_data.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Operation forbidden: Admin privileges required."
         )
-    
     return token_data
-    
-    # # Re-fetch full user to ensure `is_admin` is absolutely fresh and user still exists.
-    # # This is important for critical admin actions to prevent stale tokens granting access.
-    # user = await crud_user.get_user(db, token_data.user_id)
-    # if user is None or not user.is_admin: # Double check DB status
-    #     raise HTTPException(
-    #         status_code=status.HTTP_403_FORBIDDEN,
-    #         detail="Operation forbidden: Admin privileges required (status potentially changed)."
-    #     )
-    # return user
