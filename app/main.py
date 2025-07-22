@@ -1,4 +1,5 @@
 from fastapi import FastAPI , Request , status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi # Import this function
 from fastapi.responses import JSONResponse
 from pymongo.errors import PyMongoError # Import the specific MongoDB error base class
@@ -17,6 +18,20 @@ app = FastAPI(
     description="This is a sample FastAPI application.",    
     version=settings.APP_VERSION,
 )
+
+origins = [
+    "http://localhost:5173",  # for React frontend on local
+]
+
+# Add middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # or ["*"] to allow all
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # --- FAST Lifecycle Events Handlers---
 @app.on_event("startup")
 async def startup_event():
