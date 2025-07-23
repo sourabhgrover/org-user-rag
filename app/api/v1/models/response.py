@@ -13,3 +13,7 @@ class StandardResponse(BaseModel, Generic[T]):
         json_encoders = {
             # Add any custom encoders if needed
         }
+
+class DeleteResponse(BaseModel):
+    """Response model for delete operations"""
+    detail: str
