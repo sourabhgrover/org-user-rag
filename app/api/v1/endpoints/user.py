@@ -32,8 +32,8 @@ async def create_user_endpoint(user_create: UserCreate, db: AsyncDatabase = Depe
 
 
 @router.get("/", response_model=StandardResponse[List[UserResponse]], summary="Get all users")
-async def get_all_users(skip:int = Query(0,ge=0),limit:int = Query(100,le=1000),search_name:Optional[str] = Query(None,description='Search user by name case insensitive'),db: AsyncDatabase = Depends(get_database)):
-        users = await crud_user.get_all_user(skip,limit,search_name,db)
+async def get_all_users(organization_id: str = Query(..., description="Organization ID to filter users"),skip:int = Query(0,ge=0),limit:int = Query(100,le=1000),search_name:Optional[str] = Query(None,description='Search user by name case insensitive'),db: AsyncDatabase = Depends(get_database)):
+        users = await crud_user.get_all_user(skip,limit,search_name,organization_id,db)
         return StandardResponse(
             status="success",
             message="Users retrieved successfully",

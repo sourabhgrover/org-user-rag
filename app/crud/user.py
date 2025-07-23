@@ -169,8 +169,13 @@ async def get_user_by_id(user_id:PyObjectId,db:AsyncDatabase):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="User Details not found")
     return UserInDB(**user)
 
-async def get_all_user(skip,limit,search_name,db):
+async def get_all_user(skip,limit,search_name,organization_id,db):
     query_filter = {}
+    if not ObjectId.is_valid(organization_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Organization ID")
+
+    query_filter['organization_id'] = ObjectId(organization_id)
+    
     if search_name:
         query_filter['first_name'] = {"$regex":search_name,"$options":"i"}
 
