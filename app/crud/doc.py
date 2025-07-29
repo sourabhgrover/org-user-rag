@@ -7,6 +7,8 @@ from datetime import datetime
 from typing import List
 from bson import ObjectId
 
+from app.services import rag_service
+
 
 
 async def upload_files(
@@ -39,7 +41,8 @@ async def upload_files(
                 "name": file.filename,
                 "unique_filename": unique_filename,
                 "path": file_path,
-                "uploadedAt": datetime.utcnow()
+                "uploadedAt": datetime.utcnow(),
+                "processed_for_rag": False
             }
 
             documents_to_insert.append(doc)
@@ -53,8 +56,9 @@ async def upload_files(
             
             # Convert inserted documents to DocOutput format
             for i, doc in enumerate(documents_to_insert):
+                document_id = str(insert_result.inserted_ids[i])
                 doc_output = DocOutput(
-                    id=str(insert_result.inserted_ids[i]),
+                    id=document_id,
                     organization_id=doc["organizationId"],
                     name=doc["name"],
                     unique_filename=doc["unique_filename"],
@@ -62,6 +66,9 @@ async def upload_files(
                     uploadedAt=doc["uploadedAt"]
                 )
                 uploaded_docs.append(doc_output)
+
+                # HERE WE WILL START MAGIC
+                rag_service.process_documents(doc["path"],document_id);        
 
         return uploaded_docs
 
