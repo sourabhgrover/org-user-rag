@@ -5,3 +5,6 @@ pydantic-settings
 pydantic[email]
 passlib[bcrypt]
 python-multipart
+
+
+PyPDF2
