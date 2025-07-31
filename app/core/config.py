@@ -16,7 +16,9 @@ class Settings(BaseSettings):
     # For production, replace the default with a robust generation or environment variable
     # Example for generating: import secrets; secrets.token_hex(32)
 
-    
+    #OPENAI API Key
+    OPENAI_API_KEY: str
+
     model_config = SettingsConfigDict(env_file=".env", extra='ignore')
 
 # Create settings instance
