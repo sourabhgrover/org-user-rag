@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     # Pinecone settings
     PINECONE_API_KEY: str
     PINECONE_ENVIRONMENT: str
-    PINECONE_INDEX_NAME: str = "org-documents"
+    PINECONE_INDEX_NAME: str 
 
     model_config = SettingsConfigDict(env_file=".env", extra='ignore')
 

@@ -1,12 +1,55 @@
+from operator import index
 from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
+from langchain_pinecone import PineconeVectorStore
+from pinecone import Pinecone, ServerlessSpec
+import time
+
 
 from app.core.config import settings
+
+embeddings = OpenAIEmbeddings(
+    model="text-embedding-ada-002",
+    openai_api_key=settings.OPENAI_API_KEY
+)
+
+
+index_name = settings.PINECONE_INDEX_NAME
+
+# Initialize Pinecone client manually
+pc = Pinecone(api_key=settings.PINECONE_API_KEY)
+
+# Fix: Get the list of index names correctly
+existing_indexes = [index_info["name"] for index_info in pc.list_indexes()]
+
+# Check if the index exists, and create it if not
+if index_name not in existing_indexes:
+    print(f"Creating Pinecone index: {index_name}...")
+    pc.create_index(
+        name=index_name,
+        dimension=1536,
+        metric="cosine", # Or "dotproduct" or "euclidean"
+        spec=ServerlessSpec(cloud="aws", region="us-east-1") # Adjust cloud and region as needed
+    )
+    # Wait for index to be ready
+    while not pc.describe_index(index_name).status["ready"]:
+         print("Waiting for index to be ready...")
+         time.sleep(1)
+    print("Index created.")
+else:
+    print(f"Pinecone index '{index_name}' already exists.")
+
+# Connect to the index
+pinecone_index = pc.Index(index_name)
+
+# Create vector store with the index
+vector_store = PineconeVectorStore(index=pinecone_index, embedding=embeddings)
 
 def process_documents(file_path: str,document_id:str):
     print(f"Processing Document {file_path} with {document_id}")
     try:
+
         #Step 1: Extract text from PDF file
         text = extract_text_from_pdf(file_path)
         print(f"Extracted {len(text)} characters from PDF")
@@ -15,10 +58,19 @@ def process_documents(file_path: str,document_id:str):
         # Step 2: Split Text into chunks
         chunks = extract_text_into_chunks(text,document_id)
         
-        # Step 3: Generate embeddings from Chunks
-        chunks_with_embeddings = generate_embeddings_for_chunks(chunks)
-        print(chunks_with_embeddings)
-        return True
+        # # Step 3: Generate embeddings from Chunks
+        # chunks_with_embeddings = generate_embeddings_for_chunks(chunks)
+        # print(chunks_with_embeddings)
+
+         # Step 3 & 4: Store in Pinecone (embeddings generated automatically!)
+        success = store_chunks_in_pinecone(chunks)
+        if success:
+            print(f"✅ Successfully processed and stored {len(chunks)} chunks!")
+        else:
+            print(" Failed to store chunks")
+
+
+        return success
     except Exception as e:
         print(f"Error in proeccession file {file_path}")
         return False
@@ -55,27 +107,45 @@ def extract_text_into_chunks(text:str,document_id:str):
         vector_ready_chunks.append(chunk_data)
     return vector_ready_chunks
 
-def generate_embeddings_for_chunks(chunks):
-    chunks_with_embeddings = []
-    text = []
-    for chunk in chunks:
-        text.append(chunk["text"])
+# def generate_embeddings_for_chunks(chunks):
+#     chunks_with_embeddings = []
+#     text = []
+#     for chunk in chunks:
+#         text.append(chunk["text"])
     
+#     try:
+#         embeddings = OpenAIEmbeddings(model="text-embedding-ada-002", openai_api_key=settings.OPENAI_API_KEY)
+#         print(f"Generating embeddings for {len(text)} chunks...")
+#         embedding_vectors = embeddings.embed_documents(text)
+
+#         for i, (chunk, embedding) in enumerate(zip(chunks, embedding_vectors)):
+#             chunk_with_embedding = {
+#                 "id": chunk["id"],
+#                 "text": chunk["text"],
+#                 "embedding": embedding,
+#                 "metadata": chunk["metadata"]
+#             }
+#             chunks_with_embeddings.append(chunk_with_embedding)
+
+#     except Exception as e:
+#         print(f"Error in generating embeddings: {e}")
+#         return []
+#     return chunks_with_embeddings
+
+def store_chunks_in_pinecone(chunks):
     try:
-        embeddings = OpenAIEmbeddings(model="text-embedding-ada-002", openai_api_key=settings.OPENAI_API_KEY)
-        print(f"Generating embeddings for {len(text)} chunks...")
-        embedding_vectors = embeddings.embed_documents(text)
+        texts = []
+        metadatas = []
+        for chunk in chunks:
+         texts.append(chunk["text"])
+         metadatas.append(chunk["metadata"])
 
-        for i, (chunk, embedding) in enumerate(zip(chunks, embedding_vectors)):
-            chunk_with_embedding = {
-                "id": chunk["id"],
-                "text": chunk["text"],
-                "embedding": embedding,
-                "metadata": chunk["metadata"]
-            }
-            chunks_with_embeddings.append(chunk_with_embedding)
-
+         # LangChain handles embedding generation + storage automatically!
+        vector_store.add_texts(texts=texts, metadatas=metadatas)
+        
+        print(f"✅ Successfully stored {len(chunks)} chunks in Pinecone!")
+        return True
+        print(f"✅ Successfully stored {len(chunks)} chunks in Pinecone!")
+        return True
     except Exception as e:
-        print(f"Error in generating embeddings: {e}")
-        return []
-    return chunks_with_embeddings
+        print(f"Error in storing chunks in Pinecone: {e}")

@@ -10,4 +10,5 @@ python-multipart
 PyPDF2
 langchain
 langchain-openai
+langchain-pinecone
 pinecone-client
