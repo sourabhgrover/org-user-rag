@@ -1,5 +1,6 @@
 from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings
 
 from app.core.config import settings
 
@@ -15,7 +16,8 @@ def process_documents(file_path: str,document_id:str):
         chunks = extract_text_into_chunks(text,document_id)
         
         # Step 3: Generate embeddings from Chunks
-        print(chunks)
+        chunks_with_embeddings = generate_embeddings_for_chunks(chunks)
+        print(chunks_with_embeddings)
         return True
     except Exception as e:
         print(f"Error in proeccession file {file_path}")
@@ -52,3 +54,28 @@ def extract_text_into_chunks(text:str,document_id:str):
         }
         vector_ready_chunks.append(chunk_data)
     return vector_ready_chunks
+
+def generate_embeddings_for_chunks(chunks):
+    chunks_with_embeddings = []
+    text = []
+    for chunk in chunks:
+        text.append(chunk["text"])
+    
+    try:
+        embeddings = OpenAIEmbeddings(model="text-embedding-ada-002", openai_api_key=settings.OPENAI_API_KEY)
+        print(f"Generating embeddings for {len(text)} chunks...")
+        embedding_vectors = embeddings.embed_documents(text)
+
+        for i, (chunk, embedding) in enumerate(zip(chunks, embedding_vectors)):
+            chunk_with_embedding = {
+                "id": chunk["id"],
+                "text": chunk["text"],
+                "embedding": embedding,
+                "metadata": chunk["metadata"]
+            }
+            chunks_with_embeddings.append(chunk_with_embedding)
+
+    except Exception as e:
+        print(f"Error in generating embeddings: {e}")
+        return []
+    return chunks_with_embeddings

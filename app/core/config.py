@@ -19,6 +19,13 @@ class Settings(BaseSettings):
     #OPENAI API Key
     OPENAI_API_KEY: str
 
+    
+    
+    # Pinecone settings
+    PINECONE_API_KEY: str
+    PINECONE_ENVIRONMENT: str
+    PINECONE_INDEX_NAME: str = "org-documents"
+
     model_config = SettingsConfigDict(env_file=".env", extra='ignore')
 
 # Create settings instance
