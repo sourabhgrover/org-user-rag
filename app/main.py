@@ -21,6 +21,7 @@ app = FastAPI(
 
 origins = [
     "http://localhost:5173",  # for React frontend on local
+    "https://org-rag.netlify.app",
 ]
 
 # Add middleware
