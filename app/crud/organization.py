@@ -113,7 +113,8 @@ async def create_default_admin_user(db: AsyncDatabase, organization_id: str):
         password="admin@admin",
         dob=date(1990, 1, 1),  # Default date of birth
         gender=GenderEnum.OTHER,  # Default gender
-        organization_id=organization_id
+        organization_id=organization_id,
+        is_admin=True
     )
     
     try:

@@ -1,11 +1,12 @@
 from fastapi import APIRouter , HTTPException
 from app.services import rag_service
 from app.api.v1.models.qa import QARequest,QAResponse,ContextSource  # Assuming you have a model for the request
+from app.api.v1.models.response import StandardResponse  # Assuming you have a model for the request
 import time
 
 router = APIRouter(prefix="/qa", tags=["Q&A"])
 
-@router.post("/ask",response_model=QAResponse)
+@router.post("/ask",response_model=StandardResponse[QAResponse])
 def ask_quetion(request:QARequest):
     try:
         start_time = time.time()
@@ -35,7 +36,10 @@ def ask_quetion(request:QARequest):
             for source in result["context_sources"]
         ]
 
-        return QAResponse(
+        return StandardResponse(
+            status="success",
+            message="User retrieved successfully",
+            data=QAResponse(
             question=request.question,
             answer=result["answer"],
             confidence=result["confidence"],
@@ -43,6 +47,16 @@ def ask_quetion(request:QARequest):
             total_sources=len(context_sources),
             response_time_ms=round(response_time, 2)
         )
+        )
+
+        # return QAResponse(
+        #     question=request.question,
+        #     answer=result["answer"],
+        #     confidence=result["confidence"],
+        #     context_sources=context_sources,
+        #     total_sources=len(context_sources),
+        #     response_time_ms=round(response_time, 2)
+        # )
     except Exception as e:
         print(f"Hello")
         print(f"Error answering question: {e}")

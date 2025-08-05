@@ -3,7 +3,7 @@ from pymongo.asynchronous.database import AsyncDatabase
 from pymongo.errors import DuplicateKeyError, PyMongoError  # Import DuplicateKeyError and PyMongoError for exception handling
 from typing import List, Optional
 from app.db.mongodb import get_database
-from app.api.v1.models import OrganizationCreate,OrganizationResponse,PyObjectId,OrganizationUpdate  # Import your OrganizationCreate model here
+from app.api.v1.models import OrganizationCreate,OrganizationResponse,PyObjectId,OrganizationUpdate,StandardResponse
 # from app.crud import create_organization  # Import your create_organization function here
 from app.crud import organization as crud_organization   # Import your create_organization function here
 
@@ -19,7 +19,7 @@ async def get_organization_by_id_endpoint(org_id: PyObjectId, db: AsyncDatabase 
             status_code=status.HTTP_404_NOT_FOUND,detail="Organization not found")
     return org 
 
-@router.post("/",status_code=status.HTTP_201_CREATED, summary="Create a new organization")
+@router.post("/",status_code=status.HTTP_201_CREATED,response_model=StandardResponse[OrganizationResponse], summary="Create a new organization")
 async def create_organization_endpoint(data: OrganizationCreate,db :  AsyncDatabase = Depends(get_database)):
 
     # try:
@@ -32,7 +32,12 @@ async def create_organization_endpoint(data: OrganizationCreate,db :  AsyncDatab
                 detail=f"Organization with name '{data.name}' already exists."
             )
         
-        return new_org
+        return StandardResponse(
+            status="success",
+            message="Org created successfully",
+            data=new_org
+        )
+        # return new_org
 
     # # HANDLED IT GLOBALLY AT # # the main.py file
     # # Catch specific PyMongo errors if they indicate something
