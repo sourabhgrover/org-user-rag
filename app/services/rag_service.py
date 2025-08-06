@@ -5,46 +5,46 @@ from langchain_openai import OpenAIEmbeddings , ChatOpenAI
 from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone, ServerlessSpec
 import time
-
-
+from app.core.vector_store import vector_store_manager
 from app.core.config import settings
+from app.core.llm import llm_manager
 
-embeddings = OpenAIEmbeddings(
-    model="text-embedding-ada-002",
-    openai_api_key=settings.OPENAI_API_KEY
-)
+# embeddings = OpenAIEmbeddings(
+#     model="text-embedding-ada-002",
+#     openai_api_key=settings.OPENAI_API_KEY
+# )
 
 
-index_name = settings.PINECONE_INDEX_NAME
+# index_name = settings.PINECONE_INDEX_NAME
 
-# Initialize Pinecone client manually
-pc = Pinecone(api_key=settings.PINECONE_API_KEY)
+# # Initialize Pinecone client manually
+# pc = Pinecone(api_key=settings.PINECONE_API_KEY)
 
-# Fix: Get the list of index names correctly
-existing_indexes = [index_info["name"] for index_info in pc.list_indexes()]
+# # Fix: Get the list of index names correctly
+# existing_indexes = [index_info["name"] for index_info in pc.list_indexes()]
 
-# Check if the index exists, and create it if not
-if index_name not in existing_indexes:
-    print(f"Creating Pinecone index: {index_name}...")
-    pc.create_index(
-        name=index_name,
-        dimension=1536,
-        metric="cosine", # Or "dotproduct" or "euclidean"
-        spec=ServerlessSpec(cloud="aws", region="us-east-1") # Adjust cloud and region as needed
-    )
-    # Wait for index to be ready
-    while not pc.describe_index(index_name).status["ready"]:
-         print("Waiting for index to be ready...")
-         time.sleep(1)
-    print("Index created.")
-else:
-    print(f"Pinecone index '{index_name}' already exists.")
+# # Check if the index exists, and create it if not
+# if index_name not in existing_indexes:
+#     print(f"Creating Pinecone index: {index_name}...")
+#     pc.create_index(
+#         name=index_name,
+#         dimension=1536,
+#         metric="cosine", # Or "dotproduct" or "euclidean"
+#         spec=ServerlessSpec(cloud="aws", region="us-east-1") # Adjust cloud and region as needed
+#     )
+#     # Wait for index to be ready
+#     while not pc.describe_index(index_name).status["ready"]:
+#          print("Waiting for index to be ready...")
+#          time.sleep(1)
+#     print("Index created.")
+# else:
+#     print(f"Pinecone index '{index_name}' already exists.")
 
-# Connect to the index
-pinecone_index = pc.Index(index_name)
+# # Connect to the index
+# pinecone_index = pc.Index(index_name)
 
-# Create vector store with the index
-vector_store = PineconeVectorStore(index=pinecone_index, embedding=embeddings)
+# # Create vector store with the index
+# vector_store = PineconeVectorStore(index=pinecone_index, embedding=embeddings)
 
 def process_documents(file_path: str,document_id:str):
     print(f"Processing Document {file_path} with {document_id}")
@@ -136,6 +136,7 @@ def extract_text_into_chunks(text:str,document_id:str):
 
 def store_chunks_in_pinecone(chunks):
     try:
+        vector_store = vector_store_manager.get_vector_store()
         texts = []
         metadatas = []
         for chunk in chunks:
@@ -143,6 +144,7 @@ def store_chunks_in_pinecone(chunks):
          metadatas.append(chunk["metadata"])
 
          # LangChain handles embedding generation + storage automatically!
+        # vector_store.add_texts(texts=texts, metadatas=metadatas)
         vector_store.add_texts(texts=texts, metadatas=metadatas)
         
         print(f"✅ Successfully stored {len(chunks)} chunks in Pinecone!")
@@ -157,6 +159,7 @@ def search_documents(query: str, document_id: str = None, organization_id: str =
     Universal search method - handles all search scenarios
     """
     try:
+        vector_store = vector_store_manager.get_vector_store()
         print(f"Searching for: '{query}'")
         
         # Build filter based on what's provided
@@ -241,11 +244,12 @@ def answer_question(question: str,document_id: str = None, organization_id:str =
         """
 
          # Step 4: Get answer from GPT
-        llm = ChatOpenAI(
-            model="gpt-3.5-turbo",
-            temperature=0.1,  # Low temperature for factual answers
-            openai_api_key=settings.OPENAI_API_KEY
-        )
+        # llm = ChatOpenAI(
+        #     model="gpt-3.5-turbo",
+        #     temperature=0.1,  # Low temperature for factual answers
+        #     openai_api_key=settings.OPENAI_API_KEY
+        # )
+        llm = llm_manager.get_llm()
 
         prompt = prompt_template.format(context=context_string, question=question)
         response = llm.invoke(prompt)

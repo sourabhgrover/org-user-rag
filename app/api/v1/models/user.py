@@ -7,6 +7,7 @@ from bson import ObjectId  # For MongoDB's native ObjectId
 # Custom type for ObjectId handling in Pydantic
 PyObjectId = Annotated[str, BeforeValidator(str)]
 
+## TODO Check how literal is different from GenderEnum
 class GenderEnum(str,Enum):
     MALE = "Male"
     FEMALE = "Female"
@@ -23,8 +24,7 @@ class UserBase(BaseModel):
     organization_id: Annotated[PyObjectId, Field(alias="organization_id", description="The ID of the organization the user belongs to",example="686a61391e3e8aaa36c09162")]
 
 class UserCreate(UserBase):
-    password: Annotated[str,Field(min_length=8, max_length=128, description="Password for the user account",)] 
-    pass
+    password: Annotated[str,Field(min_length=8, max_length=128, description="Password for the user account",)]
 
 class UserInDB(UserBase):
     """Model for users as stored in the database, including MongoDB _id and timestamps."""

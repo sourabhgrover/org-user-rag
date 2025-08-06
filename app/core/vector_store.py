@@ -16,6 +16,7 @@ class VectorStoreManager:
     
     def _initialize(self):
         try:
+            print("Initializing vector store...")
             logger.info("Initializing vector store")
             self.embeddings = OpenAIEmbeddings(model="text-embedding-ada-002",api_key=settings.OPENAI_API_KEY)
             self.pinecone_client = Pinecone(api_key=settings.PINECONE_API_KEY)
