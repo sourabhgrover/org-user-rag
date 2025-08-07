@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from app.api.v1.models.search import SearchRequest, SearchResponse, SearchResult
-from app.services import rag_service
+from app.services import rag_service , search_service
 import time
 
 router = APIRouter()
@@ -18,7 +18,7 @@ def search_documents(request: SearchRequest):
             raise HTTPException(status_code=400, detail="Query cannot be empty")
         print(f"Received search query: {request.query}")
         # One simple call - handles all cases
-        results = rag_service.search_documents(
+        results = search_service.search_documents(
             query=request.query,
             document_id=request.document_id,
             organization_id=request.organization_id,
