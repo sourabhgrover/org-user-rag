@@ -9,42 +9,42 @@ from app.core.vector_store import vector_store_manager
 from app.core.config import settings
 from app.core.llm import llm_manager
 
-# embeddings = OpenAIEmbeddings(
-#     model="text-embedding-ada-002",
-#     openai_api_key=settings.OPENAI_API_KEY
-# )
+embeddings = OpenAIEmbeddings(
+    model="text-embedding-ada-002",
+    openai_api_key=settings.OPENAI_API_KEY
+)
 
 
-# index_name = settings.PINECONE_INDEX_NAME
+index_name = settings.PINECONE_INDEX_NAME
 
-# # Initialize Pinecone client manually
-# pc = Pinecone(api_key=settings.PINECONE_API_KEY)
+# Initialize Pinecone client manually
+pc = Pinecone(api_key=settings.PINECONE_API_KEY)
 
-# # Fix: Get the list of index names correctly
-# existing_indexes = [index_info["name"] for index_info in pc.list_indexes()]
+# Fix: Get the list of index names correctly
+existing_indexes = [index_info["name"] for index_info in pc.list_indexes()]
 
-# # Check if the index exists, and create it if not
-# if index_name not in existing_indexes:
-#     print(f"Creating Pinecone index: {index_name}...")
-#     pc.create_index(
-#         name=index_name,
-#         dimension=1536,
-#         metric="cosine", # Or "dotproduct" or "euclidean"
-#         spec=ServerlessSpec(cloud="aws", region="us-east-1") # Adjust cloud and region as needed
-#     )
-#     # Wait for index to be ready
-#     while not pc.describe_index(index_name).status["ready"]:
-#          print("Waiting for index to be ready...")
-#          time.sleep(1)
-#     print("Index created.")
-# else:
-#     print(f"Pinecone index '{index_name}' already exists.")
+# Check if the index exists, and create it if not
+if index_name not in existing_indexes:
+    print(f"Creating Pinecone index: {index_name}...")
+    pc.create_index(
+        name=index_name,
+        dimension=1536,
+        metric="cosine", # Or "dotproduct" or "euclidean"
+        spec=ServerlessSpec(cloud="aws", region="us-east-1") # Adjust cloud and region as needed
+    )
+    # Wait for index to be ready
+    while not pc.describe_index(index_name).status["ready"]:
+         print("Waiting for index to be ready...")
+         time.sleep(1)
+    print("Index created.")
+else:
+    print(f"Pinecone index '{index_name}' already exists.")
 
-# # Connect to the index
-# pinecone_index = pc.Index(index_name)
+# Connect to the index
+pinecone_index = pc.Index(index_name)
 
-# # Create vector store with the index
-# vector_store = PineconeVectorStore(index=pinecone_index, embedding=embeddings)
+# Create vector store with the index
+vector_store = PineconeVectorStore(index=pinecone_index, embedding=embeddings)
 
 def process_documents(file_path: str,document_id:str):
     print(f"Processing Document {file_path} with {document_id}")
@@ -109,30 +109,30 @@ def extract_text_into_chunks(text:str,document_id:str):
         vector_ready_chunks.append(chunk_data)
     return vector_ready_chunks
 
-# def generate_embeddings_for_chunks(chunks):
-#     chunks_with_embeddings = []
-#     text = []
-#     for chunk in chunks:
-#         text.append(chunk["text"])
+def generate_embeddings_for_chunks(chunks):
+    chunks_with_embeddings = []
+    text = []
+    for chunk in chunks:
+        text.append(chunk["text"])
     
-#     try:
-#         embeddings = OpenAIEmbeddings(model="text-embedding-ada-002", openai_api_key=settings.OPENAI_API_KEY)
-#         print(f"Generating embeddings for {len(text)} chunks...")
-#         embedding_vectors = embeddings.embed_documents(text)
+    try:
+        embeddings = OpenAIEmbeddings(model="text-embedding-ada-002", openai_api_key=settings.OPENAI_API_KEY)
+        print(f"Generating embeddings for {len(text)} chunks...")
+        embedding_vectors = embeddings.embed_documents(text)
 
-#         for i, (chunk, embedding) in enumerate(zip(chunks, embedding_vectors)):
-#             chunk_with_embedding = {
-#                 "id": chunk["id"],
-#                 "text": chunk["text"],
-#                 "embedding": embedding,
-#                 "metadata": chunk["metadata"]
-#             }
-#             chunks_with_embeddings.append(chunk_with_embedding)
+        for i, (chunk, embedding) in enumerate(zip(chunks, embedding_vectors)):
+            chunk_with_embedding = {
+                "id": chunk["id"],
+                "text": chunk["text"],
+                "embedding": embedding,
+                "metadata": chunk["metadata"]
+            }
+            chunks_with_embeddings.append(chunk_with_embedding)
 
-#     except Exception as e:
-#         print(f"Error in generating embeddings: {e}")
-#         return []
-#     return chunks_with_embeddings
+    except Exception as e:
+        print(f"Error in generating embeddings: {e}")
+        return []
+    return chunks_with_embeddings
 
 def store_chunks_in_pinecone(chunks):
     try:

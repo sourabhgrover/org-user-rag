@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import List
 from bson import ObjectId
 
-from app.services import rag_service
+from app.services import rag_service , document_service
 
 
 
@@ -68,7 +68,7 @@ async def upload_files(
                 uploaded_docs.append(doc_output)
 
                 # HERE WE WILL START MAGIC
-                rag_service.process_documents(doc["path"],document_id);        
+                document_service.process_documents(doc["path"],document_id);        
 
         return uploaded_docs
 

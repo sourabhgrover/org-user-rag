@@ -1,5 +1,5 @@
 from fastapi import APIRouter , HTTPException
-from app.services import rag_service
+from app.services import  qa_service
 from app.api.v1.models.qa import QARequest,QAResponse,ContextSource  # Assuming you have a model for the request
 from app.api.v1.models.response import StandardResponse  # Assuming you have a model for the request
 import time
@@ -17,7 +17,7 @@ def ask_quetion(request:QARequest):
         print(f"Received question: {request.question}")
         
         # Get AI answer with context
-        result = rag_service.answer_question(
+        result = qa_service.answer_question(
             question=request.question,
             document_id=request.document_id,
             organization_id=request.organization_id,
