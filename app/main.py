@@ -4,6 +4,7 @@ from fastapi.openapi.utils import get_openapi # Import this function
 from fastapi.responses import JSONResponse
 from pymongo.errors import PyMongoError # Import the specific MongoDB error base class
 import logging # For logging errors
+from contextlib import asynccontextmanager
 
 from app.core.config import settings
 from app.db.mongodb import connect_to_mongo,close_mongo_connection
@@ -13,10 +14,40 @@ from app.api.v1.endpoints import user_router , organization_router , doc_router 
 logging.basicConfig(level=logging.ERROR) # Set desired logging level
 logger = logging.getLogger(__name__)
 
+
+
+# Lifespan event handler for FastAPI application.
+# Handles startup and shutdown events.
+    
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        await connect_to_mongo()
+        print("✅ MongoDB connection established")
+        
+        
+    except Exception as e:
+        print(f"❌ Startup failed: {e}")
+        logger.error(f"Startup error: {e}")
+        raise
+
+    yield # This separates startup from shutdown
+    # Shutdown
+    print("🛑 Application shutdown: Closing connections...")
+    try:
+        await close_mongo_connection()
+        print("✅ MongoDB connection closed")
+        
+        
+    except Exception as e:
+        print(f"❌ Shutdown error: {e}")
+        logger.error(f"Shutdown error: {e}")
+
 app = FastAPI(
     title=settings.APP_NAME,
-    description="This is a sample FastAPI application.",    
+    description="This is a RAG application.",    
     version=settings.APP_VERSION,
+    lifespan=lifespan  # Pass the lifespan function
 )
 
 origins = [
@@ -34,15 +65,15 @@ app.add_middleware(
 )
 
 # --- FAST Lifecycle Events Handlers---
-@app.on_event("startup")
-async def startup_event():
-    print("Application startup event: Connecting to MongoDB...")
-    await connect_to_mongo()
+# @app.on_event("startup")
+# async def startup_event():
+#     print("Application startup event: Connecting to MongoDB...")
+#     await connect_to_mongo()
 
-@app.on_event("shutdown")
-async def shutdown_event():
-    print("Application shutdown event: Closing MongoDB connection...")
-    await close_mongo_connection()
+# @app.on_event("shutdown")
+# async def shutdown_event():
+#     print("Application shutdown event: Closing MongoDB connection...")
+#     await close_mongo_connection()
 
     # --- GLOBAL EXCEPTION HANDLERS ---
 
