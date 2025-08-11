@@ -2,7 +2,7 @@ from fastapi import APIRouter , Depends, HTTPException,status,Query
 from pymongo.asynchronous.database import AsyncDatabase
 from typing import Optional, List
 from app.db.mongodb import get_database  # Import the get_database function
-from app.api.v1.models.user import UserCreate, PyObjectId,UserResponse,UserUpdate
+from app.api.v1.models.user import UserCreate, PyObjectId,UserResponse,UserUpdate,UserInDB
 from app.api.v1.models.response import StandardResponse, DeleteResponse
 from app.crud import user as crud_user
 from app.core.dependencies import get_current_admin_user,get_current_active_user
@@ -10,10 +10,10 @@ from app.core.dependencies import get_current_admin_user,get_current_active_user
 router = APIRouter(prefix="/user", tags=["User"],dependencies=[Depends(get_current_active_user)])
 
 
-@router.post("/", response_model=StandardResponse[UserResponse], summary="Create a new user", dependencies=[Depends(get_current_admin_user)])
-async def create_user_endpoint(user_create: UserCreate, db: AsyncDatabase = Depends(get_database)):
+@router.post("/",  summary="Create a new user", dependencies=[Depends(get_current_admin_user)])
+async def create_user_endpoint(user_create: UserCreate, db: AsyncDatabase = Depends(get_database), current_user : UserInDB = Depends(get_current_active_user)):
     try:  
-        new_user = await crud_user.create_user(db, user_create)
+        new_user = await crud_user.create_user(db, user_create, organization_id=current_user.organization_id)
         return StandardResponse(
             status="success",
             message="User created successfully",

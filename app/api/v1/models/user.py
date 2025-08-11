@@ -21,7 +21,6 @@ class UserBase(BaseModel):
     gender: Annotated[GenderEnum, Field(description="Gender of the user")]
     dob: Annotated[date, Field(description="Date of birth of the user", example="1990-01-15")]
     is_admin: Annotated[bool, Field(default=False, description="Indicates if the user is an admin", example=True)]
-    organization_id: Annotated[PyObjectId, Field(alias="organization_id", description="The ID of the organization the user belongs to",example="686a61391e3e8aaa36c09162")]
 
 class UserCreate(UserBase):
     password: Annotated[str,Field(min_length=8, max_length=128, description="Password for the user account",)]
@@ -29,6 +28,7 @@ class UserCreate(UserBase):
 class UserInDB(UserBase):
     """Model for users as stored in the database, including MongoDB _id and timestamps."""
     id: PyObjectId = Field(alias="_id", default_factory=lambda: str(ObjectId()))
+    organization_id: Annotated[PyObjectId, Field(alias="organization_id", description="The ID of the organization the user belongs to",example="686a61391e3e8aaa36c09162")]
     hashed_password: Annotated[str, Field(description="Hashed password for the user account",exclude=True)]
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

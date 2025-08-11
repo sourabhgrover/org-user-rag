@@ -45,11 +45,8 @@ async def get_user_by_username(db: AsyncDatabase, username: str) -> UserInDB:
         return UserInDB(**user_doc)
     return None
 
-async def create_user(db: AsyncDatabase, user_create: UserCreate):
+async def create_user(db: AsyncDatabase, user_create: UserCreate , organization_id: str) -> UserInDB:
     try:
-        # Debugging: Print initial user_create object
-        print(f"create_user: Initial user_create: {user_create}")
-
         # Check if user already exists by email or username
         if await get_user_by_email(db, user_create.email):
             raise HTTPException(
@@ -63,7 +60,7 @@ async def create_user(db: AsyncDatabase, user_create: UserCreate):
             )
         
         # Check if organization exists if organization_id is provided
-        if not await validate_organization_id(db, user_create.organization_id):
+        if not await validate_organization_id(db, organization_id):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Organization with ID '{user_create.organization_id}' does not exist."
@@ -73,15 +70,13 @@ async def create_user(db: AsyncDatabase, user_create: UserCreate):
         # by_alias=True ensures _id is used for 'id' field
         user_create_data = user_create.model_dump(by_alias=True)
 
-        # Debugging: Print data after initial model_dump
-        print(f"create_user: Data after model_dump: {user_create_data}")
 
         # Hash password and remove plain password
         # Ensure get_pwd_hash correctly handles encoding/decoding
         user_create_data['hashed_password'] = security.get_password_hash(user_create_data.pop('password'))
         
         # Convert organization_id to ObjectId for MongoDB
-        user_create_data['organization_id'] = ObjectId(user_create.organization_id)
+        user_create_data['organization_id'] = ObjectId(organization_id)
         
         # Convert date to datetime for MongoDB storage
         # user_create_data['dob'] is already a date object from UserCreate
