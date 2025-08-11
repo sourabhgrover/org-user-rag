@@ -109,10 +109,10 @@ async def root():
     return {"message": "Welcome to the RAG Document Query API! Visit /docs for API documentation."}
 
 # Include the user router
-app.include_router(user_router, prefix="/api/v1", tags=["User"])
-app.include_router(organization_router, prefix="/api/v1", tags=["Organization"])
-app.include_router(doc_router, prefix="/api/v1", tags=["Doc"])
-app.include_router(auth_router, prefix="/api/v1", tags=["Authentication"])
-app.include_router(search_router, prefix="/search", tags=["Search"])  # Add this line
-app.include_router(qa_router, prefix="/api/v1", tags=["Q&A"])  # Add this line
+app.include_router(auth_router, prefix="/api/v1")
+app.include_router(user_router, prefix="/api/v1")
+app.include_router(organization_router, prefix="/api/v1")
+app.include_router(doc_router, prefix="/api/v1")
+app.include_router(search_router, prefix="/api/v1")  
+app.include_router(qa_router, prefix="/api/v1")
 

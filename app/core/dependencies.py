@@ -68,7 +68,7 @@ async def get_current_active_user(
     Use this when an endpoint needs the complete and freshest user profile data.
     This dependency WILL hit the database.
     """
-    user = await crud_user.get_user(db, token_data.user_id)
+    user = await crud_user.get_user_by_id(token_data.user_id,db)
     
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found in database (token valid but user removed).")

@@ -5,9 +5,9 @@ from app.db.mongodb import get_database  # Import the get_database function
 from app.api.v1.models.user import UserCreate, PyObjectId,UserResponse,UserUpdate
 from app.api.v1.models.response import StandardResponse, DeleteResponse
 from app.crud import user as crud_user
-from app.core.dependencies import get_current_admin_user
+from app.core.dependencies import get_current_admin_user,get_current_active_user
 
-router = APIRouter(prefix="/user", tags=["User"])
+router = APIRouter(prefix="/user", tags=["User"],dependencies=[Depends(get_current_active_user)])
 
 
 @router.post("/", response_model=StandardResponse[UserResponse], summary="Create a new user", dependencies=[Depends(get_current_admin_user)])
@@ -55,7 +55,7 @@ async def get_user_by_id(user_id:PyObjectId,db:AsyncDatabase = Depends(get_datab
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=f"An unexpected error occurred: {e}")
 
-@router.put("/{user_id}", response_model=StandardResponse[UserResponse], summary="Update user by ID")
+@router.put("/{user_id}", response_model=StandardResponse[UserResponse], summary="Update user by ID",dependencies=[Depends(get_current_admin_user)])
 async def update_user_by_id(user_id:str,update_data:UserUpdate,db:AsyncDatabase = Depends(get_database)):
     try:
         updated_user = await crud_user.update_user_by_id(user_id,update_data,db)
@@ -71,7 +71,7 @@ async def update_user_by_id(user_id:str,update_data:UserUpdate,db:AsyncDatabase 
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="An unexpected error occurred.")
 
 
-@router.delete("/{user_id}", response_model=StandardResponse[DeleteResponse], summary="Delete user by ID")
+@router.delete("/{user_id}", response_model=StandardResponse[DeleteResponse], summary="Delete user by ID",dependencies=[Depends(get_current_admin_user)])
 async def delete_user_by_id(user_id:PyObjectId,db:AsyncDatabase= Depends(get_database)):
     result = await crud_user.delete_user_by_id(user_id,db)
     if not result:

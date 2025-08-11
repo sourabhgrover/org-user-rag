@@ -180,6 +180,5 @@ async def get_all_user(skip,limit,search_name,organization_id,db):
         query_filter['first_name'] = {"$regex":search_name,"$options":"i"}
 
     cursor = db.users.find(query_filter).skip(skip).limit(limit)
-    print(f"cursor: {cursor}")  # Debugging: Print the cursor object
     users = await cursor.to_list(length=limit)
     return [UserInDB(**user) for user in users]

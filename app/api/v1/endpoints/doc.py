@@ -6,8 +6,9 @@ from app.db.mongodb import get_database
 from app.crud.doc import upload_files, getDocsByOrgId
 from app.api.v1.models.doc import DocOutput
 from app.api.v1.models.response import StandardResponse
+from app.core.dependencies import get_current_active_user
 
-router = APIRouter(prefix="/doc",tags=["Document"])
+router = APIRouter(prefix="/doc",tags=["Document"],dependencies=[Depends(get_current_active_user)])
 
 @router.post("/",response_model=StandardResponse[List[DocOutput]] , summary="Upload pdf file")
 async def upload_file_ep(

@@ -1,10 +1,11 @@
-from fastapi import APIRouter , HTTPException
+from fastapi import APIRouter , HTTPException, Depends
 from app.services import  qa_service
 from app.api.v1.models.qa import QARequest,QAResponse,ContextSource  # Assuming you have a model for the request
 from app.api.v1.models.response import StandardResponse  # Assuming you have a model for the request
 import time
+from app.core.dependencies import get_current_active_user
 
-router = APIRouter(prefix="/qa", tags=["Q&A"])
+router = APIRouter(prefix="/qa", tags=["Q&A"],dependencies=[Depends(get_current_active_user)])
 
 @router.post("/ask",response_model=StandardResponse[QAResponse])
 def ask_quetion(request:QARequest):
@@ -23,7 +24,6 @@ def ask_quetion(request:QARequest):
             organization_id=request.organization_id,
             max_context_chunks=request.max_context_chunks
         )
-        print(f"AI Answer: {result['answer']}")
         # Calculate response time
         response_time = (time.time() - start_time) * 1000
          # Format context sources

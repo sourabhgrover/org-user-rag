@@ -3,9 +3,11 @@ from app.api.v1.models.search import SearchRequest, SearchResponse, SearchResult
 from app.services import rag_service , search_service
 import time
 
-router = APIRouter()
+from app.core.dependencies import get_current_active_user
 
-@router.post("/search", response_model=SearchResponse)
+router = APIRouter(prefix="/search", tags=["Search"],dependencies=[Depends(get_current_active_user)])
+
+@router.post("/", response_model=SearchResponse)
 def search_documents(request: SearchRequest):
     """
     Search through uploaded documents using semantic similarity
