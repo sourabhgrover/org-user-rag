@@ -32,8 +32,8 @@ async def create_user_endpoint(user_create: UserCreate, db: AsyncDatabase = Depe
 
 
 @router.get("/", response_model=StandardResponse[List[UserResponse]], summary="Get all users")
-async def get_all_users(organization_id: str = Query(..., description="Organization ID to filter users"),skip:int = Query(0,ge=0),limit:int = Query(100,le=1000),search_name:Optional[str] = Query(None,description='Search user by name case insensitive'),db: AsyncDatabase = Depends(get_database)):
-        users = await crud_user.get_all_user(skip,limit,search_name,organization_id,db)
+async def get_all_users(skip:int = Query(0,ge=0),limit:int = Query(100,le=1000),search_name:Optional[str] = Query(None,description='Search user by name case insensitive'),db: AsyncDatabase = Depends(get_database),current_user:UserInDB = Depends(get_current_active_user)):
+        users = await crud_user.get_all_user(skip,limit,search_name,current_user.organization_id,db)
         return StandardResponse(
             status="success",
             message="Users retrieved successfully",
@@ -41,9 +41,9 @@ async def get_all_users(organization_id: str = Query(..., description="Organizat
         )
 
 @router.get("/{user_id}", response_model=StandardResponse[UserResponse], summary="Get user by ID")
-async def get_user_by_id(user_id:PyObjectId,db:AsyncDatabase = Depends(get_database)):
+async def get_user_by_id(user_id:PyObjectId,db:AsyncDatabase = Depends(get_database),current_user : UserInDB = Depends(get_current_active_user)):
     try:
-        user = await crud_user.get_user_by_id(user_id, db)
+        user = await crud_user.get_user_by_id(user_id, db,current_user.organization_id)
         return StandardResponse(
             status="success",
             message="User retrieved successfully",
@@ -72,8 +72,8 @@ async def update_user_by_id(user_id:str,update_data:UserUpdate,db:AsyncDatabase 
 
 
 @router.delete("/{user_id}", response_model=StandardResponse[DeleteResponse], summary="Delete user by ID",dependencies=[Depends(get_current_admin_user)])
-async def delete_user_by_id(user_id:PyObjectId,db:AsyncDatabase= Depends(get_database)):
-    result = await crud_user.delete_user_by_id(user_id,db)
+async def delete_user_by_id(user_id:PyObjectId,db:AsyncDatabase= Depends(get_database),current_user:UserInDB = Depends(get_current_active_user)):
+    result = await crud_user.delete_user_by_id(user_id,db,current_user.organization_id)
     if not result:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="User not found")
 

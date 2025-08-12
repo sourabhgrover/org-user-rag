@@ -90,18 +90,14 @@ async def create_user(db: AsyncDatabase, user_create: UserCreate , organization_
         user_create_data['created_at'] = datetime.utcnow()
         user_create_data['updated_at'] = datetime.utcnow()
         
-        # Debugging: Print final data before insertion
-        print(f"create_user: Data before insert_one: {user_create_data}")
+        
         
         result = await db.users.insert_one(user_create_data)
         
-        # Debugging: Print inserted_id
-        print(f"create_user: Inserted ID: {result.inserted_id}")
+        
 
         new_user = await db.users.find_one({"_id": result.inserted_id})
         
-        # Debugging: Print retrieved user from DB
-        print(f"create_user: Retrieved user from DB: {new_user}")
         
         # This is where the Pydantic validation error occurs if new_user is missing fields
         
@@ -116,8 +112,8 @@ async def create_user(db: AsyncDatabase, user_create: UserCreate , organization_
             detail=f"An unexpected error occurred while creating user: {str(e)}"
         )
     
-async def delete_user_by_id(user_id:PyObjectId,db:AsyncDatabase) -> bool:
-    result = await db.users.delete_one({"_id":ObjectId(user_id)});
+async def delete_user_by_id(user_id:PyObjectId,db:AsyncDatabase,org_id) -> bool:
+    result = await db.users.delete_one({"_id":ObjectId(user_id),"organization_id":ObjectId(org_id)});
     return result.deleted_count > 0
 
 
