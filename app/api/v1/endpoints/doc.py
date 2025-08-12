@@ -7,17 +7,19 @@ from app.crud.doc import upload_files, getDocsByOrgId
 from app.api.v1.models.doc import DocOutput
 from app.api.v1.models.response import StandardResponse
 from app.core.dependencies import get_current_active_user
+from app.api.v1.models.user import UserInDB
 
-router = APIRouter(prefix="/doc",tags=["Document"],dependencies=[Depends(get_current_active_user)])
+router = APIRouter(prefix="/doc",tags=["Doc"],dependencies=[Depends(get_current_active_user)])
 
 @router.post("/",response_model=StandardResponse[List[DocOutput]] , summary="Upload pdf file")
 async def upload_file_ep(
     file: List[UploadFile] = File(...),
-    organization_id: str = Query(...),
-    db: AsyncDatabase = Depends(get_database)
+    # organization_id: str = Query(...),
+    db: AsyncDatabase = Depends(get_database),
+    current_user : UserInDB = Depends(get_current_active_user)
 ):
     try:
-        result = await upload_files(file, organization_id, db)
+        result = await upload_files(file, current_user.organization_id, db)
         # return result
         return StandardResponse(
             status="success",
@@ -35,17 +37,17 @@ async def upload_file_ep(
             detail="An unexpected error occurred."
         )
 
-@router.get("/{organization_id}",response_model=StandardResponse[List[DocOutput]], summary="Get documents by organization ID")
+@router.get("/",response_model=StandardResponse[List[DocOutput]], summary="Get all documents")
 async def get_docs_by_org_id(
-    organization_id: str,
-    db: AsyncDatabase = Depends(get_database)
+    db: AsyncDatabase = Depends(get_database),
+    current_user : UserInDB = Depends(get_current_active_user)
 ):
     try:
-        docs = await getDocsByOrgId(organization_id, db)
+        docs = await getDocsByOrgId(current_user.organization_id, db)
         # return docs
         return StandardResponse(
             status="success",
-            message=f"Retrieved {len(docs)} document(s) for organization {organization_id}",
+            message=f"Retrieved {len(docs)} document(s) for organization {current_user.organization_id}",
             data=docs
         )
     except Exception as e:
