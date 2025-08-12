@@ -2,13 +2,14 @@ from fastapi import APIRouter, HTTPException, Depends
 from app.api.v1.models.search import SearchRequest, SearchResponse, SearchResult
 from app.services import rag_service , search_service
 import time
+from app.api.v1.models.user import UserInDB
 
 from app.core.dependencies import get_current_active_user
 
 router = APIRouter(prefix="/search", tags=["Search"],dependencies=[Depends(get_current_active_user)])
 
 @router.post("/", response_model=SearchResponse)
-def search_documents(request: SearchRequest):
+def search_documents(request: SearchRequest,current_user : UserInDB = Depends(get_current_active_user)):
     """
     Search through uploaded documents using semantic similarity
     """
@@ -18,12 +19,12 @@ def search_documents(request: SearchRequest):
         # Validate query
         if not request.query.strip():
             raise HTTPException(status_code=400, detail="Query cannot be empty")
-        print(f"Received search query: {request.query}")
         # One simple call - handles all cases
         results = search_service.search_documents(
             query=request.query,
+            # organization_id=current_user.organization_id,
+            organization_id=current_user.organization_id,
             document_id=request.document_id,
-            organization_id=request.organization_id,
             top_k=request.top_k
         )
         

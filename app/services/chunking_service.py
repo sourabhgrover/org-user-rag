@@ -1,5 +1,5 @@
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-def extract_text_into_chunks(text:str,document_id:str):
+def extract_text_into_chunks(text:str,document_id:str,organization_id:str):
     try:
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000,chunk_overlap=200,separators=["\n\n", "\n", ". ", " ", ""])
         chunks = text_splitter.split_text(text)
@@ -9,6 +9,7 @@ def extract_text_into_chunks(text:str,document_id:str):
                 "id": f"{document_id}_chunk_{index}",
                 "text": chunk.strip(),
                 "metadata" : {
+                    "organization_id": organization_id,  
                     "document_id" : document_id,
                     "chunk_index": index,
                     "chunk_length": len(chunk.strip())

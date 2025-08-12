@@ -3,7 +3,7 @@ from typing import List, Optional, Dict, Any
 
 class SearchRequest(BaseModel):
     query: str
-    organization_id: Optional[str] = None
+    # organization_id: Optional[str] = None
     document_id: Optional[str] = None
     top_k: int = 5
 

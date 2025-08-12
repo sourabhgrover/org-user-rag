@@ -1,6 +1,7 @@
 from fastapi import APIRouter , HTTPException, Depends
 from app.services import  qa_service
 from app.api.v1.models.qa import QARequest,QAResponse,ContextSource  # Assuming you have a model for the request
+from app.api.v1.models.user import UserInDB  # Assuming you have a User model
 from app.api.v1.models.response import StandardResponse  # Assuming you have a model for the request
 import time
 from app.core.dependencies import get_current_active_user
@@ -8,7 +9,7 @@ from app.core.dependencies import get_current_active_user
 router = APIRouter(prefix="/qa", tags=["Q&A"],dependencies=[Depends(get_current_active_user)])
 
 @router.post("/ask",response_model=StandardResponse[QAResponse])
-def ask_quetion(request:QARequest):
+def ask_quetion(request:QARequest,current_user : UserInDB = Depends(get_current_active_user)):
     try:
         start_time = time.time()
      # Validate question
@@ -21,7 +22,7 @@ def ask_quetion(request:QARequest):
         result = qa_service.answer_question(
             question=request.question,
             document_id=request.document_id,
-            organization_id=request.organization_id,
+            organization_id=current_user.organization_id,
             max_context_chunks=request.max_context_chunks
         )
         # Calculate response time

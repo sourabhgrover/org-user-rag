@@ -68,7 +68,7 @@ async def upload_files(
                 uploaded_docs.append(doc_output)
 
                 # HERE WE WILL START MAGIC
-                document_service.process_documents(doc["path"],document_id);        
+                document_service.process_documents(doc["path"],document_id,organizationId);        
 
         return uploaded_docs
 

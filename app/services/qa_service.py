@@ -1,10 +1,10 @@
 from app.core.llm import llm_manager
 from app.services.search_service import search_documents
-def answer_question(question: str,document_id: str = None, organization_id:str = None,max_context_chunks: int = 5):
+def answer_question(question: str,organization_id:str,document_id: str = None,max_context_chunks: int = 5):
     try:
         print(f"Answering question: {question}")
         # Step 1: Search for relevant context
-        context_results =  search_documents(question,document_id,organization_id,max_context_chunks)
+        context_results =  search_documents(question,organization_id,document_id,max_context_chunks)
         if not context_results:
             return {
                 "answer": "I counld not find relevant information to answer your question.",

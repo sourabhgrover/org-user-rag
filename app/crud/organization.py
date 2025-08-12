@@ -40,7 +40,7 @@ async def create_organization(db: AsyncDatabase, create_organization: Organizati
     organization = OrganizationInDB(**new_organization)
     
     # Create default admin user for the organization
-    await create_default_admin_user(db, str(organization.id))
+    await create_default_admin_user(db, str(organization.id),organization.name)
     
     return organization
 
@@ -97,7 +97,8 @@ async def get_organizations(
     organizations = await cursor.to_list(length=limit)
     return [OrganizationInDB(**org) for org in organizations]
 
-async def create_default_admin_user(db: AsyncDatabase, organization_id: str):
+async def create_default_admin_user(db: AsyncDatabase, organization_id: str, organization_name: str):
+    print(organization_id, organization_name)
     """
     Creates a default admin user for a newly created organization.
     Username: admin, Password: admin
@@ -106,20 +107,19 @@ async def create_default_admin_user(db: AsyncDatabase, organization_id: str):
     
     # Create default admin user data
     admin_user_data = UserCreate(
-        username="admin",
+        username=f"{organization_name}-admin",
         email=f"admin@org-{organization_id[:8]}.com",  # Use first 8 chars of org ID for unique email
         first_name="Admin",
         last_name="User",
-        password="admin@admin",
+        password=f"{organization_name}@admin",
         dob=date(1990, 1, 1),  # Default date of birth
         gender=GenderEnum.OTHER,  # Default gender
-        organization_id=organization_id,
         is_admin=True
     )
     
     try:
         # Create the admin user
-        admin_user = await create_user(db, admin_user_data)
+        admin_user = await create_user(db, admin_user_data,organization_id)
         print(f"Default admin user created for organization {organization_id}: {admin_user.username}")
         return admin_user
     except Exception as e:

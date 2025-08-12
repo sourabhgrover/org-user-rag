@@ -3,7 +3,7 @@ from typing import List, Optional, Dict, Any
 
 class QARequest(BaseModel):
     question: str = Field(..., min_length=1, max_length=500, description="Question to ask")
-    organization_id: Optional[str] = Field(None, description="Organization ID to search in")
+    # organization_id: Optional[str] = Field(None, description="Organization ID to search in")
     document_id: Optional[str] = Field(None, description="Specific document to search in") 
     max_context_chunks: int = Field(5, ge=1, le=10, description="Number of context chunks to use")
 
