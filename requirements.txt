@@ -13,3 +13,4 @@ langchain
 langchain-openai
 langchain-pinecone
 pinecone-client
+langchain-text-splitters
